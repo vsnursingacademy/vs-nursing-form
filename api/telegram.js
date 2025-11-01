@@ -1,6 +1,6 @@
-// ✅ Fix for Vercel: define runtime at top
+// ✅ Correct runtime value for Vercel
 export const config = {
-  runtime: 'nodejs20.x',
+  runtime: 'nodejs',
 };
 
 export default async function handler(req, res) {
