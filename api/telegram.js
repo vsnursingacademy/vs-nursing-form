@@ -1,11 +1,21 @@
+// ✅ Fix for Vercel: define runtime at top
+export const config = {
+  runtime: 'nodejs20.x',
+};
+
 export default async function handler(req, res) {
   try {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed')
-    const token = process.env.TELEGRAM_BOT_TOKEN
-    const chatId = process.env.TELEGRAM_CHAT_ID
-    if (!token || !chatId) return res.status(500).send('Missing TELEGRAM env vars')
+    if (req.method !== 'POST') {
+      return res.status(405).send('Method Not Allowed');
+    }
 
-    const body = req.body || {}
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (!token || !chatId) {
+      return res.status(500).send('Missing Telegram credentials');
+    }
+
     const {
       name = '',
       phone = '',
@@ -16,7 +26,7 @@ export default async function handler(req, res) {
       queryType = '',
       guidance = '',
       contact = '',
-    } = body
+    } = req.body || {};
 
     const text = [
       '🩺 *New Guidance Form Submission*',
@@ -32,22 +42,27 @@ export default async function handler(req, res) {
       contact ? `📱 Contact Method: ${contact}` : '',
       '',
       '© VS Nursing Academy'
-    ].filter(Boolean).join('\n')
+    ].filter(Boolean).join('\n');
 
-    const url = `https://api.telegram.org/bot${token}/sendMessage`
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
     const tgRes = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
-    })
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'Markdown',
+      }),
+    });
 
     if (!tgRes.ok) {
-      const txt = await tgRes.text()
-      return res.status(500).send('Telegram error: ' + txt)
+      const errText = await tgRes.text();
+      return res.status(500).send('Telegram error: ' + errText);
     }
 
-    res.status(200).json({ ok: true })
+    return res.status(200).json({ ok: true });
   } catch (e) {
-    res.status(500).send(e.message || 'Error')
+    return res.status(500).send(e.message || 'Error');
   }
 }
